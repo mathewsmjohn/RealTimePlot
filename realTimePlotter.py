@@ -15,9 +15,9 @@ realTimePlotter.py
     time
     datetime
 --------------------------------------------------------------------------------
-Author: Mathews John
-Date: 08-05-2019
 """
+__author__ = 'Mathews John'
+__version__ = 0.1
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 from matplotlib.widgets import Button
@@ -33,9 +33,9 @@ from datetime import datetime as dt
 
 pauseFlag = 0
 
-# This class plots the data in parallel to data collection
 class ProcessPlotter(object):
     """
+    Plots data in parallel 
     This is a process that plots the data. This is a modified version of an example
     that can be found in https://matplotlib.org/3.1.1/gallery/misc/multiprocess_sgskip.html
     """
@@ -45,9 +45,11 @@ class ProcessPlotter(object):
 
     def terminate(self):
         self.pipe.close()
-        #plt.close('all')
 
     def call_back(self):
+        """
+        Plots 3 lines based on data.
+        """
         while self.pipe.poll():
             command = self.pipe.recv()
             if command is None or command[0] is 'q':
@@ -92,16 +94,16 @@ class ProcessPlotter(object):
     def __call__(self, pipe):
         print('starting plotter...')
         self.pipe = pipe
-            # Commands send over the pipe take the following format
-            # [command_string, sampleCount, data1, data2 ... dataN]
-            # sampleCount is an int
-            # data is a float
-            # command_string is a string ---
-            # 's'  - start
-            # 'r'  - ready
-            # 'q'  - quit
-            # 'p'  - Pause
-            # 'k'  - Resume
+        # Commands send over the pipe take the following format
+        # [command_string, sampleCount, data1, data2 ... dataN]
+        # sampleCount is an int
+        # data is a float
+        # command_string is a string ---
+        # 's'  - start
+        # 'r'  - ready
+        # 'q'  - quit
+        # 'p'  - Pause
+        # 'k'  - Resume
            
         def startReading(event):
             self.startButton.color = 'g'
@@ -162,7 +164,7 @@ class ProcessPlotter(object):
         self.stopButton.on_clicked(stopReading)
         self.pauseButton.active = False
         self.stopButton.active = False
-        #Probably useless
+
         self.pauseButton.on_clicked(pausePlotting)
 
         #Strings
@@ -197,8 +199,6 @@ class NBPlot(object):
     # Add ADC values here if need be
     def plot(self):
         send = self.plot_pipe.send
-
-        data = ['r',0,1]
         data = ['r',self.X, self.Y1, self.Y2, self.Y3]
         send(data)
         
@@ -223,85 +223,39 @@ class NBPlot(object):
 
 def main():
 
-
     pl = NBPlot()
-    
-    """
-    # Uncomment for arduino functionality
-    usbPort = '/dev/tty*something*' # You can find this using the Arduino IDE or ls -al /dev/tty* on terminal
-    arduinoObject = serial.Serial(usbPort, baudrate=9600)
-    """
 
-    # Uncomment for UI functionality
-    #savefID = open('AblationRun_'+dt.now().strftime('%m-%d-%Y__%H-%M-%S')+'.csv','w')
-    #savefID.write('Sample Number, Time, Ch1, Ch2, Ch3, Temp1, Temp2, Temp3\n')
     count = 0
 
     #Test Case with 100000 entries
-    fID = open('./../testLog.txt','r') #replace with the arduino read
+    fID = open('./testLog.txt','r') #replace with the arduino read
     while(pl.checkPipe() is not 's' ): 
         continue #Blocking statement
-    
-    '''
-    startbyte = bytes('\xF8') # In Python 2.7 bytes is similar to str
 
-    # This writes to the Arduino 
-    #arduinoObject.write('s')
-    # Do not start until start is pressed
-    temp_data = arduinoObject.read(1)
-
-    # This needs testing. This points to the write amount of bytes. Once this is done, go into the while == True loop
-    while(temp_data != startbyte):
-        temp_data = arduinoObject.read(1)
-    '''
     y = fID.readline()
 
-    # All arduino data should be sent to the pl function in this while loop
     while(True and y!=''): 
-        
-        '''
-        #needs testing
-        dataReadIn = arduinoObject.read(4)
-        # Raw ADC values
-        dataToProcess = dataReadIn[1:3]
-        # Processed float values. Make sure these are floats
-        processedData = processArduinoData(dataToProcess)
-        '''
         try:
-            pl.setData(count, float(y),float(y),float(y)) #Add in ADC values if needed
+            pl.setData(count, float(y),float(y),float(y)) 
         except:
             continue
-        #pl.setData(count, float(processedData[0]),float(processedData[1]),float(processedData[2])) #Add in ADC values if needed
-        #dataToWrite = ','.join([str(count), dt.now().strftime('%H-%M-%S.%f'), str(dataToProcess[0]), str(dataToProcess[1]), str(dataToProcess[2]), 
-        # str(processedData[0]), str(processedData[1]), str(processedData[2])])
-        #savefID.write(dataToWrite+'\n')
-        count = count + 1 # Use this for sample count
-        pl.plot() # Do not remove
-        time.sleep(0.01) #Keep
+        count = count + 1 
+        pl.plot() 
+        time.sleep(0.01) 
         
         y = fID.readline()
         flag = pl.checkPipe()
-        # Keep this block
         if flag is 'q':
             break
         elif flag is 'p':
             while(flag is not 'k'):
                 flag = pl.checkPipe()
-                continue #Blocking statement
+                continue 
 
-    pl.closePipe() #Keep
+    pl.closePipe() 
 
     fID.close()   
-    #savefID.close()
-    #arduinoObject.close()
 
-
-
-def processArduinoData():
-    # Write the calibrated formula.
-    # Use the math library or the np library if needed.
-    # log is in the math library - https://docs.python.org/2/library/math.html
-    pass
 
 if __name__ == '__main__':
     #if plt.get_backend() == "MacOSX":
